@@ -8,6 +8,4 @@ Files: menu.txt: a text file including the dataset ant its records/fields main.c
 
 How to use: Make sure menu.txt is in the same folder and run program. Adding or removing is done through the text file. I'm still figuring out the search thing, so for now it can only look specifically for the food that is inputed.
 
-Checklist: The only thing I feel wasn't achieved here was full search functionality, I'll fix it later.
-
-It's about ready as it can be, I'm rather surprised I finished that in one day. (will definetley spread it out next time)
+update, changed everything so vector is no longer included. 
