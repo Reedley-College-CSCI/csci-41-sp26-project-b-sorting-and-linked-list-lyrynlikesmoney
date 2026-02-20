@@ -4,31 +4,52 @@
 #include <fstream>
 #include <string> //still think this is dumb
 #include <iomanip>
-#include <vector>
 #include <chrono> //easier than other options imo
 #include <sstream>
+#include <limits> // basically redid everything involving this because not allowed to use vector
 
 using namespace std;
 
 struct MenuItem {
-    string name;        // Food name, can be anything – the code doesn’t restrict this
-    string type;        // Appetizer, Main, Side, Dessert, Beverage (recommended)
+    string name;        // Food name, can be anything. the code doesn’t restrict this but real stuff makes more sense
+    string type;        // Appetizer, Main, Side, Dessert, Beverage (not enforced)
     string nutrition;   // Healthy, Unhealthy, Varies (ditto the last comment)
-    double price;       // Supports cents; don’t include a dollar sign
+    double price;       // Supports cents; don’t include a dollar sign or text, errors will happen
 };
 
 class MenuManager {
 private:
-    vector<MenuItem> menuItems;
+    MenuItem* menuItems;// did it right this time
+    int size;
+    int capacity;
     const string filename = "menu.txt"; // if not menu.txt, what are you even doing?
 
+    void resizeArray() {
+        capacity *= 2; //reworked
+        MenuItem* newArray = new MenuItem[capacity]; // doubles array size
+
+        for (int i = 0; i < size; i++) {
+            newArray[i] = menuItems[i];  //copy
+        }
+
+        delete[] menuItems;
+        menuItems = newArray; //stop leak
+    }
+
 public:
-    MenuManager() {
+    MenuManager() { //memory stuff
+        capacity = 10;
+        size = 0;
+        menuItems = new MenuItem[capacity];
         loadFromFile();
     }
 
+    ~MenuManager() {
+        delete[] menuItems;
+    }
+
     void loadFromFile() {
-        ifstream file(filename);
+        ifstream file(filename); //opens text file
 
         // If the file can't be opened, get notified, not sure it works but no errs have appeared
         if (!file) {
@@ -36,7 +57,7 @@ public:
             return;
         }
 
-        menuItems.clear(); // Clear existing items
+        size = 0; // Clear items just in case
 
         string line;
         while (getline(file, line)) {
@@ -49,9 +70,13 @@ public:
             getline(ss, nutrition, ',');
             getline(ss, priceStr);
 
-            try {
+            try { //reworked
                 double price = stod(priceStr);
-                menuItems.push_back({name, type, nutrition, price}); // Add item
+
+                if (size >= capacity)
+                    resizeArray(); // the array stuff took too long to figure out
+
+                menuItems[size++] = {name, type, nutrition, price}; // Add item
             } catch (...) {
                 // Skip invalid lines if any are there
             }
@@ -61,21 +86,27 @@ public:
     void saveToFile() {
         ofstream file(filename); // will be overwritten. only remove items you added please
 
-        for (const auto& item : menuItems) {
-            file << item.name << ","
-                 << item.type << ","
-                 << item.nutrition << ","
-                 << item.price << "\n";
+        for (int i = 0; i < size; i++) {
+            file << menuItems[i].name << ","
+                 << menuItems[i].type << ","
+                 << menuItems[i].nutrition << ","
+                 << menuItems[i].price << "\n";
         }
     }
 
     void addItem(const MenuItem& item) {
-        menuItems.push_back(item); // Add new item to menu
+        if (size >= capacity)
+            resizeArray();
+
+        menuItems[size++] = item; // Add new item to menu
     }
 
     void removeItem(int index) {
-        if (index >= 0 && index < static_cast<int>(menuItems.size())) {
-            menuItems.erase(menuItems.begin() + index); // Remove item
+        if (index >= 0 && index < size) {
+            for (int i = index; i < size - 1; i++) {
+                menuItems[i] = menuItems[i + 1];
+            }
+            size--; // Remove item
         } else {
             cout << "Invalid ID." << "\n";
         }
@@ -94,7 +125,7 @@ public:
 
         cout << string(65, '-') << "\n"; // seprerator, just to look nice
 
-        for (size_t i = 0; i < menuItems.size(); ++i) {
+        for (int i = 0; i < size; i++) { //big loop
             cout << setw(5)  << i + 1
                  << setw(20) << menuItems[i].name
                  << setw(15) << menuItems[i].type
@@ -111,14 +142,14 @@ public:
         bool found = false;
         cout << "\nSearching for: " << query << "\n";
 
-        for (const auto& item : menuItems) {
-            if (item.name.find(query) != string::npos) {
+        for (int i = 0; i < size; i++) {
+            if (menuItems[i].name.find(query) != string::npos) {
                 cout << "Found: "
-                     << item.name << " ("
-                     << item.type << ", "
-                     << item.nutrition << ") - $"
+                     << menuItems[i].name << " ("
+                     << menuItems[i].type << ", "
+                     << menuItems[i].nutrition << ") - $"
                      << fixed << setprecision(2)
-                     << item.price << "\n";
+                     << menuItems[i].price << "\n";
                 found = true;
             }
         }
@@ -139,7 +170,7 @@ int main() {
     int choice;
 
     do {
-        //options
+        //options for user
         cout << "\n" << "1. View Menu"
              << "\n" << "2. Add Item to Menu"
              << "\n" << "3. Remove Item from Menu"
@@ -147,7 +178,7 @@ int main() {
              << "\n" << "5. Quit"
              << "\n" << "Enter choice: ";
 
-        cin >> choice;
+        cin >> choice; //user choice
         cin.ignore(numeric_limits<streamsize>::max(), '\n'); // Clear input
 
         if (choice == 1) {
@@ -169,7 +200,7 @@ int main() {
             cin >> item.price;
             cin.ignore();
 
-            manager.addItem(item);
+            manager.addItem(item); //add to array
             manager.saveToFile();
         }
         else if (choice == 3) {
@@ -196,7 +227,7 @@ int main() {
             cout << "Invalid choice." << "\n";
         }
 
-    } while (choice != 5);
+    } while (choice != 5); //loops until program is quit
 
     return 0; // end program, probably knew that but every program code i see involves marking this
 }
