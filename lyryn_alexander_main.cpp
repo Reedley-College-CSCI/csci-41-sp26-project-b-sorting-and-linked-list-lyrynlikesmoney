@@ -11,10 +11,10 @@
 using namespace std;
 
 struct MenuItem {
-    string name;        // Food name, can be anything. the code doesn’t restrict this but real stuff makes more sense
+    string name;        // Food name, can be anything. the code doesnâ€™t restrict this but real stuff makes more sense
     string type;        // Appetizer, Main, Side, Dessert, Beverage (not enforced)
     string nutrition;   // Healthy, Unhealthy, Varies (ditto the last comment)
-    double price;       // Supports cents; don’t include a dollar sign or text, errors will happen
+    double price;       // Supports cents; donâ€™t include a dollar sign or text, errors will happen
 };
 
 class MenuManager {
